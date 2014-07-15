@@ -6,9 +6,11 @@ MAINTAINER Leo Przybylski https://github.com/r351574nc3/
 ENV MAVEN_VERSION 3.2.2
 ENV TOMCAT_VERSION 7.0.54
 ENV OJDBC_VERSION 12.1.0.1
- 
+
 RUN yum -y update --skip-broken -x iputils,systemd 
-RUN yum -y install community-mysql-server git subversion which wget
+RUN yum -y install community-mysql community-mysql-server git subversion which wget systemd; yum clean all
+
+RUN mysql_install_db  --user=mysql; cat /var/log/mysqld.log
 
 RUN wget  --no-check-certificate --no-verbose --no-cookies \
     --header "Cookie: atgPlatoStop=1; s_nr=1403896436303; s_cc=true; oraclelicense=accept-securebackup-cookie; gpw_e24=http%3A%2F%2Fwww.oracle.com%2Ftechnetwork%2Fjava%2Fjavase%2Fdownloads%2Fjdk8-downloads-2133151.html; s_sq=%5B%5BB%5D%5D" \
@@ -40,3 +42,14 @@ RUN wget  --no-check-certificate --no-verbose --no-cookies \
 RUN mvn install:install-file -DgroupId=com.oracle -DartifactId=ojdbc7 -Dversion=$OJDBC_VERSION -Dpackaging=jar -Dfile=/tmp/ojdbc7.jar
 
 RUN rm -f /tmp/apache*
+
+RUN svn export https://svn.kuali.org/repos/rice/trunk/db
+
+WORKDIR db/impex/master
+
+ADD files /files
+
+RUN cp /files/my.cnf /etc
+
+RUN /usr/bin/mysqld_safe & mvn clean install -Pdb,mysql -Dimpex.dba.password=NONE 
+EXPOSE 3306
