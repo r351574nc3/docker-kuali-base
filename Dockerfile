@@ -15,33 +15,35 @@ RUN yum -y install bc community-mysql community-mysql-server git subversion whic
 RUN mysql_install_db  --user=mysql; cat /var/log/mysqld.log
 
 RUN wget  --no-check-certificate --no-verbose --no-cookies \
-    --header "Cookie: atgPlatoStop=1; s_nr=1403896436303; s_cc=true; oraclelicense=accept-securebackup-cookie; gpw_e24=http%3A%2F%2Fwww.oracle.com%2Ftechnetwork%2Fjava%2Fjavase%2Fdownloads%2Fjdk8-downloads-2133151.html; s_sq=%5B%5BB%5D%5D" \
-     -O /tmp/jdk-8u5-linux-x64.rpm http://download.oracle.com/otn-pub/java/jdk/8u5-b13/jdk-8u5-linux-x64.rpm
+    --header "Cookie: atgPlatoStop=1; s_nr=1403896436303; s_cc=true; oraclelicense=accept-securebackup-cookie; gpw_e24=http%3A%2F%2Fwww.oracle.com%2Ftechnetwork/java/javase%2Fdownloads%2Fjdk7-downloads-1880260.html; s_sq=%5B%5BB%5D%5D" \
+     -O /tmp/jdk-7u65-linux-x64.rpm http://download.oracle.com/otn-pub/java/jdk/7u65-b17/jdk-7u65-linux-x64.rpm
 
-RUN yum install -y /tmp/jdk-8u5-linux-x64.rpm
+RUN yum install -y /tmp/jdk-7u65-linux-x64.rpm
 
 RUN rm -f /tmp/jdk*
 
-RUN wget --no-verbose -O /tmp/apache-maven-3.2.2.tar.gz \
-    http://archive.apache.org/dist/maven/maven-3/3.2.2/binaries/apache-maven-3.2.2-bin.tar.gz
+RUN wget --no-verbose -O /tmp/apache-maven-$MAVEN_VERSION.tar.gz \
+    http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz
 
 # Verify Download
-RUN echo "87e5cc81bc4ab9b83986b3e77e6b3095  /tmp/apache-maven-3.2.2.tar.gz" | \
+RUN echo "87e5cc81bc4ab9b83986b3e77e6b3095  /tmp/apache-maven-$MAVEN_VERSION.tar.gz" | \
     md5sum -c
 
-RUN tar -xzf /tmp/apache-maven-3.2.2.tar.gz 
-RUN mv apache-maven-3.2.2 /usr/local
-RUN ln -s /usr/local/apache-maven-3.2.2 /usr/local/apache-maven
+RUN tar -xzf /tmp/apache-maven-$MAVEN_VERSION.tar.gz 
+RUN mv apache-maven-$MAVEN_VERSION /usr/local
+RUN ln -s /usr/local/apache-maven-$MAVEN_VERSION /usr/local/apache-maven
 RUN ln -s /usr/local/apache-maven/bin/* /usr/local/bin
 
 RUN rm -f /tmp/apache*
 
 ENV MAVEN_OPTS -Xmx2g -XX:MaxPermSize=256m 
 
-RUN svn export https://svn.kuali.org/repos/rice/trunk/db
+RUN svn export https://svn.kuali.org/repos/rice/tags/rice-2.4.2/db
 
 WORKDIR db/impex/master
 
 RUN cp /files/my.cnf /etc
 
-RUN /usr/bin/mysqld_safe & mvn clean install -Pdb,mysql -Dimpex.dba.password=NONE 
+RUN pwd && /usr/bin/mysqld_safe & mvn clean install -Pdb,mysql -Dimpex.dba.password=NONE 
+
+RUN rm -rf /db 
